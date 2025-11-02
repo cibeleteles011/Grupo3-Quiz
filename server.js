@@ -33,6 +33,13 @@ app.get('/api/info', (req, res) => {
   res.json({ ip: getLocalIP(), port: PORT });
 });
 
+// Verifica se um PIN existe
+app.get('/api/room/:pin', (req, res) => {
+  const pin = String(req.params.pin || '').replace(/\D/g, '');
+  const exists = rooms.has(pin);
+  res.json({ exists });
+});
+
 function generatePIN() {
   let pin;
   do {
@@ -64,6 +71,7 @@ io.on('connection', (socket) => {
     rooms.set(pin, room);
     socket.join(pin);
     socket.emit('host:room_created', { pin });
+    try { console.log(`[host:create_room] PIN ${pin} criado por ${socket.id}`); } catch(_){}
   });
 
   // Jogador entra
@@ -71,6 +79,7 @@ io.on('connection', (socket) => {
     const room = rooms.get(pin);
     if (!room) {
       socket.emit('player:error', { message: 'PIN inválido' });
+      try { console.log(`[player:join] PIN inválido tentado: ${pin} por ${socket.id}`); } catch(_){}
       return;
     }
     // Permitir entrada tardia: aceita em lobby e durante o jogo
@@ -80,6 +89,7 @@ io.on('connection', (socket) => {
     socket.join(pin);
     io.to(pin).emit('room:players', Object.values(room.players).map(p => ({ name: p.name, avatar: p.avatar, color: p.color })));
     socket.emit('player:joined', { pin, name: room.players[socket.id].name });
+    try { console.log(`[player:join] ${room.players[socket.id].name} entrou na sala ${pin}`); } catch(_){}
 
     // Sincroniza estado atual para o novo jogador
     if (room.state === 'question') {

@@ -71,13 +71,14 @@ if (avatarColorInput) {
 // Preenche PIN via query string
 try {
   const url = new URL(window.location.href);
-  const qpin = (url.searchParams.get('pin') || '').trim();
+  const qpinRaw = (url.searchParams.get('pin') || '').trim();
+  const qpin = qpinRaw.replace(/\D/g, '');
   if (qpin && qpin.length === 6) {
     inpPin.value = qpin;
   }
 } catch(_) {}
 
-btnJoin.addEventListener('click', () => {
+btnJoin.addEventListener('click', async () => {
   const pin = ((inpPin.value || '').replace(/\D/g, '')).trim();
   const name = (inpName.value || '').trim() || 'Jogador';
   if (pin.length !== 6) {
@@ -85,10 +86,23 @@ btnJoin.addEventListener('click', () => {
     return;
   }
   if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
+  try {
+    btnJoin.disabled = true;
+    errorDiv.classList.add('hidden');
+    const res = await fetch(`/api/room/${encodeURIComponent(pin)}`).then(r => r.ok ? r.json() : { exists: true }).catch(() => ({ exists: true }));
+    if (!res || res.exists !== true) {
+      showError('PIN inválido ou sala encerrada. Crie uma sala nova com o Host.');
+      btnJoin.disabled = false;
+      return;
+    }
+  } catch(_) { /* prossegue mesmo sem checar */ }
   socket.emit('player:join', { pin, name, avatar: selectedAvatar, color: selectedColor });
 });
 
-socket.on('player:error', ({ message }) => showError(message));
+socket.on('player:error', ({ message }) => {
+  btnJoin.disabled = false;
+  showError(message);
+});
 
 socket.on('player:joined', ({ pin, name }) => {
   currentPIN = pin;
