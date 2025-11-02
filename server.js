@@ -131,6 +131,13 @@ io.on('connection', (socket) => {
     io.to(room.hostId).emit('host:answer_count', Object.keys(room.answers).length);
   });
 
+  // Atualização de fundo enviada pelo host
+  socket.on('host:bg_update', ({ pin, url }) => {
+    const room = rooms.get(pin);
+    if (!room || room.hostId !== socket.id) return;
+    io.to(pin).emit('room:bg_update', { url: String(url || '') });
+  });
+
   socket.on('disconnect', () => {
     // Se host caiu, encerrar sala
     for (const [pin, room] of rooms.entries()) {

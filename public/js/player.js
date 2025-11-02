@@ -117,6 +117,12 @@ socket.on('game:ended', ({ leaderboard }) => {
   });
 });
 
+// Atualização de fundo vinda do Host
+socket.on('room:bg_update', ({ url }) => {
+  if (!url) return;
+  document.body.style.setProperty('--bg-url', `url('${url}')`);
+});
+
 function showError(msg) {
   errorDiv.textContent = msg;
   errorDiv.classList.remove('hidden');

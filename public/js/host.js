@@ -25,6 +25,10 @@ const networkUrlSpan2 = el('network-url-2');
 const qrSetupDiv = document.getElementById('qr-setup');
 const qrLobbyDiv = document.getElementById('qr-lobby');
 const themeSelect = document.getElementById('theme-select');
+// Campo opcional para URL personalizada (se adicionarmos no HTML futuramente)
+const customBgUrlKey = 'quiz_bg_url';
+const bgUrlInput = document.getElementById('bg-url');
+const bgApplyBtn = document.getElementById('set-bg');
 
 let currentPIN = null;
 let countdownInterval = null;
@@ -95,6 +99,33 @@ if (themeSelect) {
   themeSelect.addEventListener('change', () => {
     localStorage.setItem('quiz_theme', themeSelect.value);
     applyTheme(themeSelect.value);
+  });
+}
+
+// Aplica URL de fundo personalizada salva
+const savedBg = localStorage.getItem(customBgUrlKey);
+if (savedBg) {
+  document.body.style.setProperty('--bg-url', `url('${savedBg}')`);
+}
+
+// Expor função global para setar imagem de fundo (podemos acionar via console ou UI futura)
+window.setCustomBackground = function(url) {
+  if (!url) return;
+  localStorage.setItem(customBgUrlKey, url);
+  document.body.style.setProperty('--bg-url', `url('${url}')`);
+  // Notifica jogadores
+  if (currentPIN) {
+    socket.emit('host:bg_update', { pin: currentPIN, url });
+  }
+}
+
+if (bgApplyBtn && bgUrlInput) {
+  const saved = localStorage.getItem(customBgUrlKey);
+  if (saved) bgUrlInput.value = saved;
+  bgApplyBtn.addEventListener('click', () => {
+    const url = (bgUrlInput.value || '').trim();
+    if (!url) return;
+    window.setCustomBackground(url);
   });
 }
 
