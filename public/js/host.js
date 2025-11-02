@@ -23,14 +23,13 @@ const leaderboardOl = el('leaderboard');
 const networkUrlSpan = el('network-url');
 const networkUrlSpan2 = el('network-url-2');
 const qrLobbyDiv = document.getElementById('qr-lobby');
-const bgFileInput = document.getElementById('bg-file');
 const playerLinkInput = document.getElementById('player-link');
 const copyPlayerLinkBtn = document.getElementById('copy-player-link');
 
 let currentPIN = null;
 let countdownInterval = null;
 let qrRendered = false;
-let lastBgUrl = null;
+// remoção de upload de fundo: não utilizado
 
 // SFX mínimos
 const sfxClick = new Audio('https://cdn.pixabay.com/download/audio/2022/03/09/audio_7c3e1c9f87.mp3?filename=click-124467.mp3');
@@ -89,25 +88,7 @@ fetch('/api/info').then(r => r.json()).then(info => {
   if (networkUrlSpan2) networkUrlSpan2.textContent = 'http://<seu-ip>:3000';
 });
 
-// Upload simples de fundo: aplica no Host e sincroniza com os Players
-if (bgFileInput) {
-  bgFileInput.addEventListener('change', () => {
-    const file = bgFileInput.files && bgFileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      if (typeof dataUrl === 'string') {
-        lastBgUrl = dataUrl;
-        document.body.style.setProperty('--bg-url', `url('${dataUrl}')`);
-        if (currentPIN) {
-          socket.emit('host:bg_update', { pin: currentPIN, url: dataUrl });
-        }
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-}
+// Upload de fundo removido
 
 // Pódio Top 3
 function renderPodium(container, leaderboard) {
@@ -172,9 +153,7 @@ socket.on('host:room_created', ({ pin }) => {
     });
   } catch(_){}
 
-  // Se já havia um fundo selecionado antes da criação da sala, sincroniza agora
-  if (lastBgUrl) {
-    try { socket.emit('host:bg_update', { pin: currentPIN, url: lastBgUrl }); } catch(_){}}
+  // Upload de fundo removido: nada a sincronizar
 });
 
 // Copiar link do jogador
