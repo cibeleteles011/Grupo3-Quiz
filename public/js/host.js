@@ -22,21 +22,7 @@ const revealPanel = el('reveal-panel');
 const leaderboardOl = el('leaderboard');
 const networkUrlSpan = el('network-url');
 const networkUrlSpan2 = el('network-url-2');
-const qrSetupDiv = document.getElementById('qr-setup');
 const qrLobbyDiv = document.getElementById('qr-lobby');
-const themeSelect = document.getElementById('theme-select');
-// Campo opcional para URL personalizada
-const customBgUrlKey = 'quiz_bg_url';
-const bgUrlInput = document.getElementById('bg-url');
-const bgFileInput = document.getElementById('bg-file');
-const bgApplyBtn = document.getElementById('set-bg');
-
-// Áudio (bgm + sfx)
-const bgmAudio = document.getElementById('bgm');
-const sfxClick = document.getElementById('sfx-click');
-const sfxReveal = document.getElementById('sfx-reveal');
-const bgmToggle = document.getElementById('bgm-toggle');
-const bgmVolume = document.getElementById('bgm-volume');
 
 let currentPIN = null;
 let countdownInterval = null;
@@ -86,8 +72,7 @@ fetch('/api/info').then(r => r.json()).then(info => {
   const playerUrl = `${base}/player.html`;
   if (networkUrlSpan) networkUrlSpan.textContent = playerUrl;
   if (networkUrlSpan2) networkUrlSpan2.textContent = base;
-  if (!qrRendered) {
-    renderQR(qrSetupDiv, playerUrl);
+  if (!qrRendered && qrLobbyDiv) {
     renderQR(qrLobbyDiv, playerUrl);
     qrRendered = true;
   }
@@ -96,66 +81,7 @@ fetch('/api/info').then(r => r.json()).then(info => {
   if (networkUrlSpan2) networkUrlSpan2.textContent = 'http://<seu-ip>:3000';
 });
 
-// Tema de fundo
-function applyTheme(value) {
-  document.body.classList.remove('theme-school', 'theme-hospital');
-  if (value === 'school') document.body.classList.add('theme-school');
-  else if (value === 'hospital') document.body.classList.add('theme-hospital');
-}
-
-const savedTheme = localStorage.getItem('quiz_theme') || 'default';
-if (themeSelect) {
-  themeSelect.value = savedTheme;
-  applyTheme(savedTheme);
-  themeSelect.addEventListener('change', () => {
-    localStorage.setItem('quiz_theme', themeSelect.value);
-    applyTheme(themeSelect.value);
-  });
-}
-
-// Aplica URL de fundo personalizada salva
-const savedBg = localStorage.getItem(customBgUrlKey);
-if (savedBg) {
-  document.body.style.setProperty('--bg-url', `url('${savedBg}')`);
-}
-
-// Expor função global para setar imagem de fundo (podemos acionar via console ou UI futura)
-window.setCustomBackground = function(url) {
-  if (!url) return;
-  localStorage.setItem(customBgUrlKey, url);
-  document.body.style.setProperty('--bg-url', `url('${url}')`);
-  // Notifica jogadores
-  if (currentPIN) {
-    socket.emit('host:bg_update', { pin: currentPIN, url });
-  }
-}
-
-if (bgApplyBtn && bgUrlInput) {
-  const saved = localStorage.getItem(customBgUrlKey);
-  if (saved) bgUrlInput.value = saved;
-  bgApplyBtn.addEventListener('click', () => {
-    const url = (bgUrlInput.value || '').trim();
-    if (!url) return;
-    window.setCustomBackground(url);
-  });
-}
-
-// Upload de imagem de fundo (gera data URL local)
-if (bgFileInput) {
-  bgFileInput.addEventListener('change', () => {
-    const file = bgFileInput.files && bgFileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      if (typeof dataUrl === 'string') {
-        window.setCustomBackground(dataUrl);
-        if (bgUrlInput) bgUrlInput.value = dataUrl;
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-}
+// Removido: temas, fundo customizado e upload. QR é apenas no Lobby.
 
 // Pódio Top 3
 function renderPodium(container, leaderboard) {
@@ -235,7 +161,6 @@ socket.on('room:players', (players) => {
 
 btnStart.addEventListener('click', () => {
   if (!currentPIN) return;
-  if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
   socket.emit('host:start', { pin: currentPIN });
 });
 
@@ -266,13 +191,11 @@ socket.on('host:answer_count', (count) => {
 
 btnReveal.addEventListener('click', () => {
   if (!currentPIN) return;
-  if (sfxReveal) { try { sfxReveal.currentTime = 0; sfxReveal.play(); } catch(_){} }
   socket.emit('host:reveal', { pin: currentPIN });
 });
 
 btnNext.addEventListener('click', () => {
   if (!currentPIN) return;
-  if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
   socket.emit('host:next', { pin: currentPIN });
 });
 
@@ -334,29 +257,4 @@ function stopTimer() {
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = null;
 }
-
-// Controles de música de fundo
-if (bgmAudio && bgmToggle && bgmVolume) {
-  bgmAudio.volume = Number(localStorage.getItem('bgm_volume') || '0.3');
-  bgmVolume.value = String(bgmAudio.volume);
-  const playing = localStorage.getItem('bgm_playing') === '1';
-  if (playing) {
-    bgmAudio.play().catch(()=>{});
-    bgmToggle.textContent = 'Pausar música';
-  }
-  bgmToggle.addEventListener('click', () => {
-    if (bgmAudio.paused) {
-      bgmAudio.play().catch(()=>{});
-      bgmToggle.textContent = 'Pausar música';
-      localStorage.setItem('bgm_playing','1');
-    } else {
-      bgmAudio.pause();
-      bgmToggle.textContent = 'Tocar música';
-      localStorage.setItem('bgm_playing','0');
-    }
-  });
-  bgmVolume.addEventListener('input', () => {
-    bgmAudio.volume = Number(bgmVolume.value);
-    localStorage.setItem('bgm_volume', String(bgmAudio.volume));
-  });
-}
+// Removido: controles de música.
