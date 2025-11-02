@@ -44,6 +44,16 @@ input, textarea { width:100%; padding:10px; border-radius:10px; border:1px solid
 .question-header { display:flex; justify-content: space-between; align-items:center; margin: 8px 0 12px; color:#0b1220; }
 ol { margin-left: 20px; }
 
+/* QR Code cards */
+.qr-wrap { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.qr-card { background:#ffffff; border:1px solid #e5e7eb; border-radius:14px; padding:12px; box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+.qr-card canvas, .qr-card img { width:220px !important; height:220px !important; display:block; border-radius:10px; }
+.qr-caption { font-size:14px; color:#334155; }
+
+/* Audio controls */
+.audio-controls { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.audio-controls input[type="range"] { width:140px; }
+
 /* Avatares e Lista de Jogadores */
 .avatar-grid { display: grid; grid-template-columns: repeat(5, 48px); gap:10px; margin:8px 0; }
 .avatar-btn { width:48px; height:48px; border-radius:50%; border:2px solid transparent; background:#ffffffcc; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:22px; box-shadow: inset 0 0 0 1px #e5e7eb; }

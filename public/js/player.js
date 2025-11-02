@@ -25,6 +25,10 @@ let currentPIN = null;
 let answered = false;
 let selectedAvatar = '😀';
 
+// Áudios
+const sfxClick = document.getElementById('sfx-click');
+const sfxReveal = document.getElementById('sfx-reveal');
+
 // Avatares disponíveis (pode expandir conforme desejar)
 const AVATARS = ['😀','😎','🤩','🦊','🐼','🐯','🐸','🐵','🐱','🐶','🦄','🐝','🐧','🐙','🐳'];
 
@@ -46,6 +50,15 @@ function renderAvatarGrid() {
 }
 renderAvatarGrid();
 
+// Preenche PIN via query string
+try {
+  const url = new URL(window.location.href);
+  const qpin = (url.searchParams.get('pin') || '').trim();
+  if (qpin && qpin.length === 6) {
+    inpPin.value = qpin;
+  }
+} catch(_) {}
+
 btnJoin.addEventListener('click', () => {
   const pin = (inpPin.value || '').trim();
   const name = (inpName.value || '').trim() || 'Jogador';
@@ -53,6 +66,7 @@ btnJoin.addEventListener('click', () => {
     showError('PIN deve ter 6 dígitos.');
     return;
   }
+  if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
   socket.emit('player:join', { pin, name, avatar: selectedAvatar });
 });
 
@@ -88,6 +102,7 @@ socket.on('game:question', ({ index, total, q }) => {
     btn.addEventListener('click', () => {
       if (answered) return;
       answered = true;
+      if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
       socket.emit('player:answer', { pin: currentPIN, choice: i });
       feedback.textContent = 'Resposta enviada!';
     });
@@ -97,6 +112,7 @@ socket.on('game:question', ({ index, total, q }) => {
 
 socket.on('game:reveal', ({ correctIndex, leaderboard, results }) => {
   feedback.textContent = `Resposta correta: opção ${correctIndex + 1}`;
+  if (sfxReveal) { try { sfxReveal.currentTime = 0; sfxReveal.play(); } catch(_){} }
 });
 
 socket.on('game:ended', ({ leaderboard }) => {

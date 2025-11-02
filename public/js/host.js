@@ -25,10 +25,18 @@ const networkUrlSpan2 = el('network-url-2');
 const qrSetupDiv = document.getElementById('qr-setup');
 const qrLobbyDiv = document.getElementById('qr-lobby');
 const themeSelect = document.getElementById('theme-select');
-// Campo opcional para URL personalizada (se adicionarmos no HTML futuramente)
+// Campo opcional para URL personalizada
 const customBgUrlKey = 'quiz_bg_url';
 const bgUrlInput = document.getElementById('bg-url');
+const bgFileInput = document.getElementById('bg-file');
 const bgApplyBtn = document.getElementById('set-bg');
+
+// Áudio (bgm + sfx)
+const bgmAudio = document.getElementById('bgm');
+const sfxClick = document.getElementById('sfx-click');
+const sfxReveal = document.getElementById('sfx-reveal');
+const bgmToggle = document.getElementById('bgm-toggle');
+const bgmVolume = document.getElementById('bgm-volume');
 
 let currentPIN = null;
 let countdownInterval = null;
@@ -43,8 +51,8 @@ function renderQR(targetEl, url) {
       // eslint-disable-next-line no-new
       new QRCode(targetEl, {
         text: url,
-        width: 128,
-        height: 128,
+        width: 220,
+        height: 220,
         colorDark: '#111827',
         colorLight: '#e2e8f0',
         correctLevel: QRCode.CorrectLevel.M,
@@ -55,7 +63,7 @@ function renderQR(targetEl, url) {
   // Fallback: imagem de QR via API pública
   const img = document.createElement('img');
   const encoded = encodeURIComponent(url);
-  img.width = 128; img.height = 128; img.alt = 'QR Code';
+  img.width = 220; img.height = 220; img.alt = 'QR Code';
   img.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encoded}`;
   targetEl.appendChild(img);
 }
@@ -129,6 +137,23 @@ if (bgApplyBtn && bgUrlInput) {
   });
 }
 
+// Upload de imagem de fundo (gera data URL local)
+if (bgFileInput) {
+  bgFileInput.addEventListener('change', () => {
+    const file = bgFileInput.files && bgFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl === 'string') {
+        window.setCustomBackground(dataUrl);
+        if (bgUrlInput) bgUrlInput.value = dataUrl;
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // Pódio Top 3
 function renderPodium(container, leaderboard) {
   if (!container) return;
@@ -175,6 +200,18 @@ socket.on('host:room_created', ({ pin }) => {
   pinSpan.textContent = pin;
   secSetup.classList.add('hidden');
   secLobby.classList.remove('hidden');
+
+  // Atualiza QR com PIN embutido
+  try {
+    fetch('/api/info').then(r => r.json()).then(info => {
+      const base = detectBaseUrl(info);
+      const playerPinUrl = `${base}/player.html?pin=${encodeURIComponent(pin)}`;
+      renderQR(qrLobbyDiv, playerPinUrl);
+    }).catch(() => {
+      const playerPinUrl = `http://<seu-ip>:3000/player.html?pin=${encodeURIComponent(pin)}`;
+      renderQR(qrLobbyDiv, playerPinUrl);
+    });
+  } catch(_){}
 });
 
 socket.on('room:players', (players) => {
@@ -195,6 +232,7 @@ socket.on('room:players', (players) => {
 
 btnStart.addEventListener('click', () => {
   if (!currentPIN) return;
+  if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
   socket.emit('host:start', { pin: currentPIN });
 });
 
@@ -225,11 +263,13 @@ socket.on('host:answer_count', (count) => {
 
 btnReveal.addEventListener('click', () => {
   if (!currentPIN) return;
+  if (sfxReveal) { try { sfxReveal.currentTime = 0; sfxReveal.play(); } catch(_){} }
   socket.emit('host:reveal', { pin: currentPIN });
 });
 
 btnNext.addEventListener('click', () => {
   if (!currentPIN) return;
+  if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
   socket.emit('host:next', { pin: currentPIN });
 });
 
@@ -290,4 +330,30 @@ function startTimer(ms) {
 function stopTimer() {
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = null;
+}
+
+// Controles de música de fundo
+if (bgmAudio && bgmToggle && bgmVolume) {
+  bgmAudio.volume = Number(localStorage.getItem('bgm_volume') || '0.3');
+  bgmVolume.value = String(bgmAudio.volume);
+  const playing = localStorage.getItem('bgm_playing') === '1';
+  if (playing) {
+    bgmAudio.play().catch(()=>{});
+    bgmToggle.textContent = 'Pausar música';
+  }
+  bgmToggle.addEventListener('click', () => {
+    if (bgmAudio.paused) {
+      bgmAudio.play().catch(()=>{});
+      bgmToggle.textContent = 'Pausar música';
+      localStorage.setItem('bgm_playing','1');
+    } else {
+      bgmAudio.pause();
+      bgmToggle.textContent = 'Tocar música';
+      localStorage.setItem('bgm_playing','0');
+    }
+  });
+  bgmVolume.addEventListener('input', () => {
+    bgmAudio.volume = Number(bgmVolume.value);
+    localStorage.setItem('bgm_volume', String(bgmAudio.volume));
+  });
 }
