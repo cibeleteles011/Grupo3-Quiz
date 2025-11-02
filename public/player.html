@@ -51,7 +51,37 @@
   <audio id="sfx-click" crossorigin="anonymous" src="https://cdn.pixabay.com/download/audio/2022/03/09/audio_7c3e1c9f87.mp3?filename=click-124467.mp3"></audio>
   <audio id="sfx-reveal" crossorigin="anonymous" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_08a05559c8.mp3?filename=success-1-6297.mp3"></audio>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/player.js"></script>
+  <script>
+    (function(){
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var server = (params.get('server') || window.location.origin).replace(/\/$/, '');
+        var s = document.createElement('script');
+        s.src = server + '/socket.io/socket.io.js';
+        s.onload = function(){
+          var app = document.createElement('script');
+          app.src = '/js/player.js';
+          document.body.appendChild(app);
+        };
+        s.onerror = function(){
+          var cdn = document.createElement('script');
+          cdn.src = 'https://cdn.socket.io/4.8.1/socket.io.min.js';
+          cdn.integrity = 'sha384-Mh7mZHEU1p1rZl8qCY9LjzqB4Zb1pDqV0pW1qgMvH5nqCkqvzB3q8m6l+z2B+7lN';
+          cdn.crossOrigin = 'anonymous';
+          cdn.onload = function(){
+            var app = document.createElement('script');
+            app.src = '/js/player.js';
+            document.body.appendChild(app);
+          };
+          document.body.appendChild(cdn);
+        };
+        document.body.appendChild(s);
+      } catch(_) {
+        var fallback = document.createElement('script');
+        fallback.src = '/js/player.js';
+        document.body.appendChild(fallback);
+      }
+    })();
+  </script>
 </body>
 </html>
