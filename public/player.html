@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jogador | Quiz</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Jogador</h1>
+
+    <section id="join">
+      <label>PIN da sala</label>
+      <input id="pin" placeholder="Ex: 123456" maxlength="6" />
+      <label>Seu nome</label>
+      <input id="name" placeholder="Ex: Ana" />
+      <label>Escolha um avatar</label>
+      <div id="avatar-grid" class="avatar-grid"></div>
+      <div class="actions">
+        <button id="join-btn" class="btn">Entrar</button>
+      </div>
+      <div id="error" class="error hidden"></div>
+    </section>
+
+    <section id="waiting" class="hidden">
+      <h2>Aguardando início...</h2>
+      <div id="room-pin"></div>
+    </section>
+
+    <section id="game" class="hidden">
+      <div class="question-header">
+        <div>Questão <span id="q-index"></span>/<span id="q-total"></span></div>
+        <div id="timer"></div>
+      </div>
+      <h2 id="q-text"></h2>
+      <div id="options" class="options"></div>
+      <div id="feedback" class="muted"></div>
+    </section>
+
+    <section id="end" class="hidden">
+      <h2>Fim de jogo</h2>
+      <ol id="leaderboard" class="leaderboard"></ol>
+    </section>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/player.js"></script>
+</body>
+</html>
