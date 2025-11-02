@@ -160,6 +160,9 @@ socket.on('game:question', ({ index, total, q, endAt }) => {
       answered = true;
       // animação de clique
       btn.classList.add('clicked');
+      // neon selecionado
+      Array.from(optionsDiv.children).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
       setTimeout(() => btn.classList.remove('clicked'), 600);
       socket.emit('player:answer', { pin: currentPIN, choice: i, time: Date.now() });
       feedback.textContent = 'Resposta enviada!';
