@@ -36,8 +36,11 @@ let countdownInterval = null;
 const sfxClick = document.getElementById('sfx-click');
 const sfxReveal = document.getElementById('sfx-reveal');
 
-// Avatares disponíveis (pode expandir conforme desejar)
-const AVATARS = ['😀','😎','🤩','🦊','🐼','🐯','🐸','🐵','🐱','🐶','🦄','🐝','🐧','🐙','🐳'];
+// Avatares disponíveis (personagens legais)
+const AVATARS = [
+  '😎','🤖','👾','🧙\u200d♂️','🧝\u200d♀️','🦸\u200d♂️','🦸\u200d♀️','🧑\u200d🚀','🧑\u200d🎮','👨\u200d🎤',
+  '🦊','🐯','🦁','🐲','🐼','🐧','🐙','🦄','🐨','🐸'
+];
 
 function renderAvatarGrid() {
   avatarGrid.innerHTML = '';
@@ -149,13 +152,16 @@ socket.on('game:question', ({ index, total, q, endAt }) => {
   optionsDiv.innerHTML = '';
   q.options.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = `btn option opt-${i}`;
+    btn.type = 'button';
+    btn.className = 'option opt-' + i;
     btn.textContent = opt;
     btn.addEventListener('click', () => {
       if (answered) return;
       answered = true;
-      if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
-      socket.emit('player:answer', { pin: currentPIN, choice: i });
+      // animação de clique
+      btn.classList.add('clicked');
+      setTimeout(() => btn.classList.remove('clicked'), 600);
+      socket.emit('player:answer', { pin: currentPIN, choice: i, time: Date.now() });
       feedback.textContent = 'Resposta enviada!';
     });
     optionsDiv.appendChild(btn);
@@ -257,7 +263,15 @@ function startTimer(endAt) {
     const left = Math.max(0, (endAt || 0) - Date.now());
     const s = Math.ceil(left / 1000);
     timerDiv.textContent = `${s}s`;
-    if (left <= 0) stopTimer();
+    if (s <= 5) {
+      timerDiv.classList.add('timer-warning');
+    } else {
+      timerDiv.classList.remove('timer-warning');
+    }
+    if (left <= 0) {
+      timerDiv.classList.remove('timer-warning');
+      stopTimer();
+    }
   }, 200);
 }
 

@@ -104,11 +104,12 @@ io.on('connection', (socket) => {
     if (room.state === 'question') {
       const question = room.quiz[room.questionIndex];
       if (question) {
+        const duration = (question.timeLimit || 20000) + 10000; // +10s extra
         socket.emit('game:question', {
           index: room.questionIndex,
           total: room.quiz.length,
-          q: { text: question.text, options: question.options, timeLimit: question.timeLimit || 20000 },
-          endAt: (room.startTime || Date.now()) + (question.timeLimit || 20000),
+          q: { text: question.text, options: question.options, timeLimit: duration },
+          endAt: (room.startTime || Date.now()) + duration,
         });
       }
     } else if (room.state === 'ended') {
@@ -186,15 +187,16 @@ function nextQuestion(pin) {
   }
   room.state = 'question';
   room.startTime = Date.now();
+  const duration = (question.timeLimit || 20000) + 10000; // +10s extra
   io.to(pin).emit('game:question', {
     index: room.questionIndex,
     total: room.quiz.length,
     q: {
       text: question.text,
       options: question.options,
-      timeLimit: question.timeLimit || 20000,
+      timeLimit: duration,
     },
-    endAt: room.startTime + (question.timeLimit || 20000),
+    endAt: room.startTime + duration,
   });
 }
 
