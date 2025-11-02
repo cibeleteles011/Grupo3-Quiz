@@ -24,9 +24,11 @@ const networkUrlSpan = el('network-url');
 const networkUrlSpan2 = el('network-url-2');
 const qrSetupDiv = document.getElementById('qr-setup');
 const qrLobbyDiv = document.getElementById('qr-lobby');
+const themeSelect = document.getElementById('theme-select');
 
 let currentPIN = null;
 let countdownInterval = null;
+let qrRendered = false;
 
 // Gera QR Code para uma URL
 function renderQR(targetEl, url) {
@@ -35,8 +37,8 @@ function renderQR(targetEl, url) {
   // eslint-disable-next-line no-new
   new QRCode(targetEl, {
     text: url,
-    width: 160,
-    height: 160,
+    width: 128,
+    height: 128,
     colorDark: '#111827',
     colorLight: '#e2e8f0',
     correctLevel: QRCode.CorrectLevel.M,
@@ -58,12 +60,62 @@ fetch('/api/info').then(r => r.json()).then(info => {
   const playerUrl = `${base}/player.html`;
   if (networkUrlSpan) networkUrlSpan.textContent = playerUrl;
   if (networkUrlSpan2) networkUrlSpan2.textContent = base;
-  renderQR(qrSetupDiv, playerUrl);
-  renderQR(qrLobbyDiv, playerUrl);
+  if (!qrRendered) {
+    renderQR(qrSetupDiv, playerUrl);
+    renderQR(qrLobbyDiv, playerUrl);
+    qrRendered = true;
+  }
 }).catch(() => {
   if (networkUrlSpan) networkUrlSpan.textContent = 'http://<seu-ip>:3000/player.html';
   if (networkUrlSpan2) networkUrlSpan2.textContent = 'http://<seu-ip>:3000';
 });
+
+// Tema de fundo
+function applyTheme(value) {
+  document.body.classList.remove('theme-school', 'theme-hospital');
+  if (value === 'school') document.body.classList.add('theme-school');
+  else if (value === 'hospital') document.body.classList.add('theme-hospital');
+}
+
+const savedTheme = localStorage.getItem('quiz_theme') || 'default';
+if (themeSelect) {
+  themeSelect.value = savedTheme;
+  applyTheme(savedTheme);
+  themeSelect.addEventListener('change', () => {
+    localStorage.setItem('quiz_theme', themeSelect.value);
+    applyTheme(themeSelect.value);
+  });
+}
+
+// Pódio Top 3
+function renderPodium(container, leaderboard) {
+  if (!container) return;
+  container.innerHTML = '';
+  const top3 = (leaderboard || []).slice(0, 3);
+  const order = [1, 0, 2]; // visual: 2º, 1º, 3º (centro maior)
+  const wrapper = document.createDocumentFragment();
+  order.forEach(idx => {
+    const item = top3[idx];
+    const placeDiv = document.createElement('div');
+    placeDiv.className = 'place ' + (idx === 0 ? 'first' : idx === 1 ? 'second' : 'third');
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.textContent = item ? `${item.score}` : '';
+    const label = document.createElement('div');
+    label.className = 'label';
+    const av = document.createElement('div');
+    av.className = 'avatar-circle';
+    av.textContent = item ? (item.avatar || '😀') : '';
+    const nm = document.createElement('span');
+    nm.textContent = item ? (idx === 0 ? '1º ' : idx === 1 ? '2º ' : '3º ') + item.name : (idx === 0 ? '1º' : idx === 1 ? '2º' : '3º');
+    label.appendChild(av);
+    label.appendChild(nm);
+    placeDiv.appendChild(bar);
+    placeDiv.appendChild(label);
+    wrapper.appendChild(placeDiv);
+  });
+  container.appendChild(wrapper);
+}
 
 btnCreate.addEventListener('click', () => {
   let quiz = [];
@@ -155,6 +207,8 @@ socket.on('game:reveal', ({ correctIndex, leaderboard, results }) => {
     li.appendChild(nm);
     leaderboardOl.appendChild(li);
   });
+  const podiumDiv = document.getElementById('podium');
+  renderPodium(podiumDiv, leaderboard);
 });
 
 socket.on('game:ended', ({ leaderboard }) => {
@@ -174,6 +228,8 @@ socket.on('game:ended', ({ leaderboard }) => {
     li.appendChild(nm);
     leaderboardOl.appendChild(li);
   });
+  const podiumDiv = document.getElementById('podium');
+  renderPodium(podiumDiv, leaderboard);
 });
 
 function startTimer(ms) {
