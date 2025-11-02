@@ -22,6 +22,9 @@ const timerDiv = el('timer');
 const feedback = el('feedback');
 const leaderboardOl = el('leaderboard');
 const podiumDiv = document.getElementById('podium-player');
+const secRound = el('round');
+const leaderboardRound = el('leaderboard-round');
+const podiumRound = document.getElementById('podium-round');
 
 let currentPIN = null;
 let answered = false;
@@ -135,6 +138,7 @@ socket.on('room:ended', () => {
 socket.on('game:question', ({ index, total, q, endAt }) => {
   secWaiting.classList.add('hidden');
   secEnd.classList.add('hidden');
+  if (secRound) secRound.classList.add('hidden');
   secGame.classList.remove('hidden');
   feedback.textContent = '';
   answered = false;
@@ -162,6 +166,55 @@ socket.on('game:question', ({ index, total, q, endAt }) => {
 socket.on('game:reveal', ({ correctIndex, leaderboard, results }) => {
   feedback.textContent = `Resposta correta: opção ${correctIndex + 1}`;
   if (sfxReveal) { try { sfxReveal.currentTime = 0; sfxReveal.play(); } catch(_){} }
+
+  // Mostrar página de resultados da rodada
+  if (secRound && leaderboardRound) {
+    secGame.classList.add('hidden');
+    secEnd.classList.add('hidden');
+    secRound.classList.remove('hidden');
+    leaderboardRound.innerHTML = '';
+    (leaderboard || []).forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'player-badge';
+      const av = document.createElement('div');
+      av.className = 'avatar-circle';
+      av.textContent = item.avatar || '😀';
+      if (item.color) av.style.backgroundColor = item.color;
+      const nm = document.createElement('span');
+      nm.textContent = `${item.name} — ${item.score}`;
+      li.appendChild(av);
+      li.appendChild(nm);
+      leaderboardRound.appendChild(li);
+    });
+    if (podiumRound) {
+      podiumRound.innerHTML = '';
+      const top3 = (leaderboard || []).slice(0, 3);
+      const order = [1, 0, 2];
+      const frag = document.createDocumentFragment();
+      order.forEach((idx) => {
+        const item = top3[idx];
+        const placeDiv = document.createElement('div');
+        placeDiv.className = 'place ' + (idx === 0 ? 'first' : idx === 1 ? 'second' : 'third');
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.textContent = item ? `${item.score}` : '';
+        const label = document.createElement('div');
+        label.className = 'label';
+        const avc = document.createElement('div');
+        avc.className = 'avatar-circle';
+        avc.textContent = item ? (item.avatar || '😀') : '';
+        if (item && item.color) avc.style.backgroundColor = item.color;
+        const nm = document.createElement('span');
+        nm.textContent = item ? ((idx === 0 ? '1º ' : idx === 1 ? '2º ' : '3º ') + item.name) : (idx === 0 ? '1º' : idx === 1 ? '2º' : '3º');
+        label.appendChild(avc);
+        label.appendChild(nm);
+        placeDiv.appendChild(bar);
+        placeDiv.appendChild(label);
+        frag.appendChild(placeDiv);
+      });
+      podiumRound.appendChild(frag);
+    }
+  }
 });
 
 socket.on('game:ended', ({ leaderboard }) => {
