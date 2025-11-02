@@ -1,4 +1,4 @@
-const socket = io();
+let socket = null;
 
 const el = (id) => document.getElementById(id);
 const secJoin = el('join');
@@ -68,6 +68,14 @@ if (avatarColorInput) {
   });
 }
 
+// Resolve servidor base via query string (?server=...)
+let SERVER_BASE = window.location.origin;
+try {
+  const url = new URL(window.location.href);
+  const qsServer = (url.searchParams.get('server') || '').trim();
+  if (qsServer) SERVER_BASE = qsServer;
+} catch(_) {}
+
 // Preenche PIN via query string
 try {
   const url = new URL(window.location.href);
@@ -77,6 +85,14 @@ try {
     inpPin.value = qpin;
   }
 } catch(_) {}
+
+// Inicializa socket
+try {
+  // Usa o servidor base resolvido (permite domínios diferentes)
+  socket = io(SERVER_BASE, { transports: ['websocket', 'polling'] });
+} catch (e) {
+  console.error('Falha ao conectar socket:', e);
+}
 
 btnJoin.addEventListener('click', async () => {
   const pin = ((inpPin.value || '').replace(/\D/g, '')).trim();
@@ -89,7 +105,7 @@ btnJoin.addEventListener('click', async () => {
   try {
     btnJoin.disabled = true;
     errorDiv.classList.add('hidden');
-    const res = await fetch(`/api/room/${encodeURIComponent(pin)}`).then(r => r.ok ? r.json() : { exists: true }).catch(() => ({ exists: true }));
+    const res = await fetch(`${SERVER_BASE}/api/room/${encodeURIComponent(pin)}`, { mode: 'cors' }).then(r => r.ok ? r.json() : { exists: true }).catch(() => ({ exists: true }));
     if (!res || res.exists !== true) {
       showError('PIN inválido ou sala encerrada. Crie uma sala nova com o Host.');
       btnJoin.disabled = false;

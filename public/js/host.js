@@ -161,11 +161,12 @@ socket.on('host:room_created', ({ pin }) => {
   try {
     fetch('/api/info').then(r => r.json()).then(info => {
       const base = detectBaseUrl(info);
-      const playerPinUrl = `${base}/player.html?pin=${encodeURIComponent(pin)}`;
+      const playerPinUrl = `${base}/player.html?pin=${encodeURIComponent(pin)}&server=${encodeURIComponent(base)}`;
       renderQR(qrLobbyDiv, playerPinUrl);
       if (playerLinkInput) playerLinkInput.value = playerPinUrl;
     }).catch(() => {
-      const playerPinUrl = `http://<seu-ip>:3000/player.html?pin=${encodeURIComponent(pin)}`;
+      const base = 'http://<seu-ip>:3000';
+      const playerPinUrl = `${base}/player.html?pin=${encodeURIComponent(pin)}&server=${encodeURIComponent(base)}`;
       renderQR(qrLobbyDiv, playerPinUrl);
       if (playerLinkInput) playerLinkInput.value = playerPinUrl;
     });
