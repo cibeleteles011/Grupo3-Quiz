@@ -32,17 +32,28 @@ let qrRendered = false;
 
 // Gera QR Code para uma URL
 function renderQR(targetEl, url) {
-  if (!targetEl || typeof QRCode === 'undefined') return;
+  if (!targetEl) return;
   targetEl.innerHTML = '';
-  // eslint-disable-next-line no-new
-  new QRCode(targetEl, {
-    text: url,
-    width: 128,
-    height: 128,
-    colorDark: '#111827',
-    colorLight: '#e2e8f0',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
+  try {
+    if (typeof QRCode !== 'undefined') {
+      // eslint-disable-next-line no-new
+      new QRCode(targetEl, {
+        text: url,
+        width: 128,
+        height: 128,
+        colorDark: '#111827',
+        colorLight: '#e2e8f0',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+      return;
+    }
+  } catch (_) { /* fallback abaixo */ }
+  // Fallback: imagem de QR via API pública
+  const img = document.createElement('img');
+  const encoded = encodeURIComponent(url);
+  img.width = 128; img.height = 128; img.alt = 'QR Code';
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encoded}`;
+  targetEl.appendChild(img);
 }
 
 // Determina base URL (loca.lt público ou LAN)
