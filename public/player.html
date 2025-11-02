@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Jogador | Quiz</title>
   <link rel="stylesheet" href="/styles.css" />
+  <script>
+    (function(){
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var server = (params.get('server') || '').replace(/\/$/, '');
+        if (server && server !== window.location.origin) {
+          // Redireciona para o mesmo caminho no domínio do Host
+          var qs = window.location.search;
+          // Garante que ?server esteja presente e correto
+          var base = server + window.location.pathname + qs;
+          window.location.replace(base);
+        }
+      } catch(_) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="container">
