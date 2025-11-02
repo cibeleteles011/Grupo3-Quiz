@@ -78,7 +78,7 @@ try {
 } catch(_) {}
 
 btnJoin.addEventListener('click', () => {
-  const pin = (inpPin.value || '').trim();
+  const pin = ((inpPin.value || '').replace(/\D/g, '')).trim();
   const name = (inpName.value || '').trim() || 'Jogador';
   if (pin.length !== 6) {
     showError('PIN deve ter 6 dígitos.');
