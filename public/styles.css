@@ -6,7 +6,13 @@ body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubunt
   background-size: cover; background-position: center; min-height: 100vh; position: relative; }
 /* brilho/zoom suave */
 body::before { content:""; position: fixed; inset:0; pointer-events:none; background: radial-gradient(ellipse at 20% 10%, rgba(255,255,255,0.25), transparent 40%), radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.2), transparent 40%); animation: floatGlow 12s ease-in-out infinite alternate; }
+body::after { content:""; position: fixed; inset:-10%; pointer-events:none; filter: blur(36px) saturate(110%); opacity: 0.25; background:
+  radial-gradient(180px 180px at 15% 20%, #3b82f6, transparent 70%),
+  radial-gradient(220px 220px at 85% 80%, #8b5cf6, transparent 70%),
+  radial-gradient(160px 160px at 70% 15%, #6366f1, transparent 70%);
+animation: floatBlobs 18s ease-in-out infinite alternate; }
 @keyframes floatGlow { from { transform: translateY(0) scale(1); } to { transform: translateY(-6px) scale(1.01); } }
+@keyframes floatBlobs { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(0,-10px,0) scale(1.03); } }
 
 /* Fundo fixo simplificado */
 .container { max-width: 900px; margin: 0 auto; padding: 24px; }
