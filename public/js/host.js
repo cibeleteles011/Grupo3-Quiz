@@ -71,10 +71,13 @@ function renderQR(targetEl, url) {
 // Determina base URL (loca.lt público ou LAN)
 function detectBaseUrl(info) {
   const origin = window.location.origin;
-  if (/\.loca\.lt$/i.test(window.location.hostname)) {
-    return origin; // já público via túnel
-  }
-  return `http://${info.ip}:${info.port}`; // LAN
+  const host = window.location.hostname;
+  // Em produção (ex.: onrender.com) ou qualquer host que não seja localhost/127, use origin
+  if (host !== 'localhost' && host !== '127.0.0.1') return origin;
+  // Túnel publica (loca.lt)
+  if (/\.loca\.lt$/i.test(host)) return origin;
+  // Ambiente local/LAN
+  return `http://${info.ip}:${info.port}`;
 }
 
 // Descobrir IP local via backend e mostrar URLs + QR
