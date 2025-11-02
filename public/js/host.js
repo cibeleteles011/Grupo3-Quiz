@@ -277,7 +277,13 @@ function startTimer(endAt) {
     const left = Math.max(0, end - Date.now());
     const s = Math.ceil(left / 1000);
     timerDiv.textContent = `${s}s`;
+    if (s <= 5) {
+      timerDiv.classList.add('timer-warning');
+    } else {
+      timerDiv.classList.remove('timer-warning');
+    }
     if (left <= 0) {
+      timerDiv.classList.remove('timer-warning');
       stopTimer();
     }
   }, 200);
