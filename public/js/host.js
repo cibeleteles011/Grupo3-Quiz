@@ -28,6 +28,10 @@ let currentPIN = null;
 let countdownInterval = null;
 let qrRendered = false;
 
+// SFX mínimos
+const sfxClick = new Audio('https://cdn.pixabay.com/download/audio/2022/03/09/audio_7c3e1c9f87.mp3?filename=click-124467.mp3');
+const sfxReveal = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_08a05559c8.mp3?filename=success-1-6297.mp3');
+
 // Gera QR Code para uma URL
 function renderQR(targetEl, url) {
   if (!targetEl) return;

@@ -20,6 +20,7 @@ const optionsDiv = el('options');
 const timerDiv = el('timer');
 const feedback = el('feedback');
 const leaderboardOl = el('leaderboard');
+const podiumDiv = document.getElementById('podium-player');
 
 let currentPIN = null;
 let answered = false;
@@ -131,6 +132,35 @@ socket.on('game:ended', ({ leaderboard }) => {
     li.appendChild(nm);
     leaderboardOl.appendChild(li);
   });
+
+  // Renderiza pódio (Top 3)
+  if (podiumDiv) {
+    podiumDiv.innerHTML = '';
+    const top3 = (leaderboard || []).slice(0, 3);
+    const order = [1, 0, 2]; // 2º, 1º, 3º (centro maior)
+    const frag = document.createDocumentFragment();
+    order.forEach((idx) => {
+      const item = top3[idx];
+      const placeDiv = document.createElement('div');
+      placeDiv.className = 'place ' + (idx === 0 ? 'first' : idx === 1 ? 'second' : 'third');
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.textContent = item ? `${item.score}` : '';
+      const label = document.createElement('div');
+      label.className = 'label';
+      const avc = document.createElement('div');
+      avc.className = 'avatar-circle';
+      avc.textContent = item ? (item.avatar || '😀') : '';
+      const nm = document.createElement('span');
+      nm.textContent = item ? ((idx === 0 ? '1º ' : idx === 1 ? '2º ' : '3º ') + item.name) : (idx === 0 ? '1º' : idx === 1 ? '2º' : '3º');
+      label.appendChild(avc);
+      label.appendChild(nm);
+      placeDiv.appendChild(bar);
+      placeDiv.appendChild(label);
+      frag.appendChild(placeDiv);
+    });
+    podiumDiv.appendChild(frag);
+  }
 });
 
 // Atualização de fundo vinda do Host
