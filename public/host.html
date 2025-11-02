@@ -25,6 +25,11 @@
     <section id="lobby" class="hidden">
       <h2>PIN da sala: <span id="pin">------</span></h2>
       <p class="muted">Peça aos jogadores para acessar: <strong><span id="network-url-2">detectando...</span>/player.html</strong></p>
+      <label>Link direto para jogadores (com PIN)</label>
+      <div class="qr-wrap">
+        <input id="player-link" readonly style="flex:1; min-width:260px" />
+        <button id="copy-player-link" class="btn btn-secondary" type="button">Copiar link</button>
+      </div>
       <div class="qr-wrap">
         <div class="qr-card">
           <div id="qr-lobby"></div>

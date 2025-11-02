@@ -24,6 +24,8 @@ const networkUrlSpan = el('network-url');
 const networkUrlSpan2 = el('network-url-2');
 const qrLobbyDiv = document.getElementById('qr-lobby');
 const bgFileInput = document.getElementById('bg-file');
+const playerLinkInput = document.getElementById('player-link');
+const copyPlayerLinkBtn = document.getElementById('copy-player-link');
 
 let currentPIN = null;
 let countdownInterval = null;
@@ -161,17 +163,32 @@ socket.on('host:room_created', ({ pin }) => {
       const base = detectBaseUrl(info);
       const playerPinUrl = `${base}/player.html?pin=${encodeURIComponent(pin)}`;
       renderQR(qrLobbyDiv, playerPinUrl);
+      if (playerLinkInput) playerLinkInput.value = playerPinUrl;
     }).catch(() => {
       const playerPinUrl = `http://<seu-ip>:3000/player.html?pin=${encodeURIComponent(pin)}`;
       renderQR(qrLobbyDiv, playerPinUrl);
+      if (playerLinkInput) playerLinkInput.value = playerPinUrl;
     });
   } catch(_){}
 
   // Se já havia um fundo selecionado antes da criação da sala, sincroniza agora
   if (lastBgUrl) {
-    try { socket.emit('host:bg_update', { pin: currentPIN, url: lastBgUrl }); } catch(_){}
-  }
+    try { socket.emit('host:bg_update', { pin: currentPIN, url: lastBgUrl }); } catch(_){}}
 });
+
+// Copiar link do jogador
+if (copyPlayerLinkBtn && playerLinkInput) {
+  copyPlayerLinkBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(playerLinkInput.value || '');
+      copyPlayerLinkBtn.textContent = 'Copiado!';
+      setTimeout(() => { copyPlayerLinkBtn.textContent = 'Copiar link'; }, 1200);
+    } catch(_) {
+      copyPlayerLinkBtn.textContent = 'Falhou';
+      setTimeout(() => { copyPlayerLinkBtn.textContent = 'Copiar link'; }, 1200);
+    }
+  });
+}
 
 socket.on('room:players', (players) => {
   playersUl.innerHTML = '';
