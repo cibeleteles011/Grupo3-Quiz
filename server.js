@@ -43,7 +43,7 @@ function generatePIN() {
 
 function getPublicLeaderboard(room) {
   return Object.values(room.players)
-    .map(p => ({ name: p.name, score: p.score, avatar: p.avatar }))
+    .map(p => ({ name: p.name, score: p.score, avatar: p.avatar, color: p.color }))
     .sort((a, b) => b.score - a.score);
 }
 
@@ -67,7 +67,7 @@ io.on('connection', (socket) => {
   });
 
   // Jogador entra
-  socket.on('player:join', ({ pin, name, avatar }) => {
+  socket.on('player:join', ({ pin, name, avatar, color }) => {
     const room = rooms.get(pin);
     if (!room) {
       socket.emit('player:error', { message: 'PIN inválido' });
@@ -75,10 +75,10 @@ io.on('connection', (socket) => {
     }
     // Permitir entrada tardia: aceita em lobby e durante o jogo
     if (!room.players[socket.id]) {
-      room.players[socket.id] = { name: String(name || 'Jogador'), score: 0, avatar: String(avatar || '😀') };
+      room.players[socket.id] = { name: String(name || 'Jogador'), score: 0, avatar: String(avatar || '😀'), color: String(color || '#ffffff') };
     }
     socket.join(pin);
-    io.to(pin).emit('room:players', Object.values(room.players).map(p => ({ name: p.name, avatar: p.avatar })));
+    io.to(pin).emit('room:players', Object.values(room.players).map(p => ({ name: p.name, avatar: p.avatar, color: p.color })));
     socket.emit('player:joined', { pin, name: room.players[socket.id].name });
 
     // Sincroniza estado atual para o novo jogador
@@ -89,6 +89,7 @@ io.on('connection', (socket) => {
           index: room.questionIndex,
           total: room.quiz.length,
           q: { text: question.text, options: question.options, timeLimit: question.timeLimit || 20000 },
+          endAt: (room.startTime || Date.now()) + (question.timeLimit || 20000),
         });
       }
     } else if (room.state === 'ended') {
@@ -147,7 +148,7 @@ io.on('connection', (socket) => {
         rooms.delete(pin);
       } else if (room.players[socket.id]) {
         delete room.players[socket.id];
-        io.to(pin).emit('room:players', Object.values(room.players).map(p => ({ name: p.name, avatar: p.avatar })));
+        io.to(pin).emit('room:players', Object.values(room.players).map(p => ({ name: p.name, avatar: p.avatar, color: p.color })));
       }
     }
   });
@@ -174,6 +175,7 @@ function nextQuestion(pin) {
       options: question.options,
       timeLimit: question.timeLimit || 20000,
     },
+    endAt: room.startTime + (question.timeLimit || 20000),
   });
 }
 
@@ -195,7 +197,7 @@ function scoreCurrent(pin) {
       delta = Math.max(100, Math.round(1000 - (ans.time / 20)));
       player.score += delta;
     }
-    results.push({ name: player.name, avatar: player.avatar, correct, time: ans.time, delta, total: player.score });
+    results.push({ name: player.name, avatar: player.avatar, color: player.color, correct, time: ans.time, delta, total: player.score });
   }
   io.to(pin).emit('game:reveal', {
     correctIndex,

@@ -23,10 +23,12 @@ const leaderboardOl = el('leaderboard');
 const networkUrlSpan = el('network-url');
 const networkUrlSpan2 = el('network-url-2');
 const qrLobbyDiv = document.getElementById('qr-lobby');
+const bgFileInput = document.getElementById('bg-file');
 
 let currentPIN = null;
 let countdownInterval = null;
 let qrRendered = false;
+let lastBgUrl = null;
 
 // SFX mínimos
 const sfxClick = new Audio('https://cdn.pixabay.com/download/audio/2022/03/09/audio_7c3e1c9f87.mp3?filename=click-124467.mp3');
@@ -85,7 +87,25 @@ fetch('/api/info').then(r => r.json()).then(info => {
   if (networkUrlSpan2) networkUrlSpan2.textContent = 'http://<seu-ip>:3000';
 });
 
-// Removido: temas, fundo customizado e upload. QR é apenas no Lobby.
+// Upload simples de fundo: aplica no Host e sincroniza com os Players
+if (bgFileInput) {
+  bgFileInput.addEventListener('change', () => {
+    const file = bgFileInput.files && bgFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (typeof dataUrl === 'string') {
+        lastBgUrl = dataUrl;
+        document.body.style.setProperty('--bg-url', `url('${dataUrl}')`);
+        if (currentPIN) {
+          socket.emit('host:bg_update', { pin: currentPIN, url: dataUrl });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 // Pódio Top 3
 function renderPodium(container, leaderboard) {
@@ -106,6 +126,7 @@ function renderPodium(container, leaderboard) {
     const av = document.createElement('div');
     av.className = 'avatar-circle';
     av.textContent = item ? (item.avatar || '😀') : '';
+    if (item && item.color) av.style.backgroundColor = item.color;
     const nm = document.createElement('span');
     nm.textContent = item ? (idx === 0 ? '1º ' : idx === 1 ? '2º ' : '3º ') + item.name : (idx === 0 ? '1º' : idx === 1 ? '2º' : '3º');
     label.appendChild(av);
@@ -145,6 +166,11 @@ socket.on('host:room_created', ({ pin }) => {
       renderQR(qrLobbyDiv, playerPinUrl);
     });
   } catch(_){}
+
+  // Se já havia um fundo selecionado antes da criação da sala, sincroniza agora
+  if (lastBgUrl) {
+    try { socket.emit('host:bg_update', { pin: currentPIN, url: lastBgUrl }); } catch(_){}
+  }
 });
 
 socket.on('room:players', (players) => {
@@ -155,6 +181,7 @@ socket.on('room:players', (players) => {
     const av = document.createElement('div');
     av.className = 'avatar-circle';
     av.textContent = p.avatar || '😀';
+    if (p.color) av.style.backgroundColor = p.color;
     const nm = document.createElement('span');
     nm.textContent = p.name;
     li.appendChild(av);
@@ -168,7 +195,7 @@ btnStart.addEventListener('click', () => {
   socket.emit('host:start', { pin: currentPIN });
 });
 
-socket.on('game:question', ({ index, total, q }) => {
+socket.on('game:question', ({ index, total, q, endAt }) => {
   secLobby.classList.add('hidden');
   secGame.classList.remove('hidden');
   revealPanel.classList.add('hidden');
@@ -186,7 +213,7 @@ socket.on('game:question', ({ index, total, q }) => {
     optionsDiv.appendChild(btn);
   });
 
-  startTimer(q.timeLimit);
+  startTimer(endAt || (Date.now() + (q.timeLimit || 20000)));
 });
 
 socket.on('host:answer_count', (count) => {
@@ -213,6 +240,7 @@ socket.on('game:reveal', ({ correctIndex, leaderboard, results }) => {
     const av = document.createElement('div');
     av.className = 'avatar-circle';
     av.textContent = item.avatar || '😀';
+    if (item.color) av.style.backgroundColor = item.color;
     const nm = document.createElement('span');
     nm.textContent = `${item.name} — ${item.score}`;
     li.appendChild(av);
@@ -234,6 +262,7 @@ socket.on('game:ended', ({ leaderboard }) => {
     const av = document.createElement('div');
     av.className = 'avatar-circle';
     av.textContent = item.avatar || '😀';
+    if (item.color) av.style.backgroundColor = item.color;
     const nm = document.createElement('span');
     nm.textContent = `${item.name} — ${item.score}`;
     li.appendChild(av);
@@ -244,9 +273,9 @@ socket.on('game:ended', ({ leaderboard }) => {
   renderPodium(podiumDiv, leaderboard);
 });
 
-function startTimer(ms) {
+function startTimer(endAt) {
   stopTimer();
-  const end = Date.now() + ms;
+  const end = endAt || (Date.now());
   countdownInterval = setInterval(() => {
     const left = Math.max(0, end - Date.now());
     const s = Math.ceil(left / 1000);

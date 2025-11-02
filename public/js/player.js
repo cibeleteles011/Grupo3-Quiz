@@ -12,6 +12,7 @@ const btnJoin = el('join-btn');
 const errorDiv = el('error');
 const roomPinDiv = el('room-pin');
 const avatarGrid = el('avatar-grid');
+const avatarColorInput = document.getElementById('avatar-color');
 
 const qIndex = el('q-index');
 const qTotal = el('q-total');
@@ -25,6 +26,8 @@ const podiumDiv = document.getElementById('podium-player');
 let currentPIN = null;
 let answered = false;
 let selectedAvatar = '😀';
+let selectedColor = '#ffffff';
+let countdownInterval = null;
 
 // Áudios
 const sfxClick = document.getElementById('sfx-click');
@@ -43,13 +46,27 @@ function renderAvatarGrid() {
     if (av === selectedAvatar) btn.classList.add('selected');
     btn.addEventListener('click', () => {
       selectedAvatar = av;
+      try { localStorage.setItem('quiz_avatar', selectedAvatar); } catch(_){}
       Array.from(avatarGrid.children).forEach(c => c.classList.remove('selected'));
       btn.classList.add('selected');
     });
     avatarGrid.appendChild(btn);
   });
 }
+try {
+  const savedAv = localStorage.getItem('quiz_avatar');
+  if (savedAv) selectedAvatar = savedAv;
+  const savedColor = localStorage.getItem('quiz_avatar_color');
+  if (savedColor) selectedColor = savedColor;
+} catch(_){}
 renderAvatarGrid();
+if (avatarColorInput) {
+  avatarColorInput.value = selectedColor;
+  avatarColorInput.addEventListener('input', () => {
+    selectedColor = avatarColorInput.value || '#ffffff';
+    try { localStorage.setItem('quiz_avatar_color', selectedColor); } catch(_){}
+  });
+}
 
 // Preenche PIN via query string
 try {
@@ -68,7 +85,7 @@ btnJoin.addEventListener('click', () => {
     return;
   }
   if (sfxClick) { try { sfxClick.currentTime = 0; sfxClick.play(); } catch(_){} }
-  socket.emit('player:join', { pin, name, avatar: selectedAvatar });
+  socket.emit('player:join', { pin, name, avatar: selectedAvatar, color: selectedColor });
 });
 
 socket.on('player:error', ({ message }) => showError(message));
@@ -85,7 +102,7 @@ socket.on('room:ended', () => {
   window.location.href = '/';
 });
 
-socket.on('game:question', ({ index, total, q }) => {
+socket.on('game:question', ({ index, total, q, endAt }) => {
   secWaiting.classList.add('hidden');
   secEnd.classList.add('hidden');
   secGame.classList.remove('hidden');
@@ -109,6 +126,7 @@ socket.on('game:question', ({ index, total, q }) => {
     });
     optionsDiv.appendChild(btn);
   });
+  startTimer(endAt || (Date.now() + (q.timeLimit || 20000)));
 });
 
 socket.on('game:reveal', ({ correctIndex, leaderboard, results }) => {
@@ -126,6 +144,7 @@ socket.on('game:ended', ({ leaderboard }) => {
     const av = document.createElement('div');
     av.className = 'avatar-circle';
     av.textContent = item.avatar || '😀';
+    if (item.color) av.style.backgroundColor = item.color;
     const nm = document.createElement('span');
     nm.textContent = `${item.name} — ${item.score}`;
     li.appendChild(av);
@@ -151,6 +170,7 @@ socket.on('game:ended', ({ leaderboard }) => {
       const avc = document.createElement('div');
       avc.className = 'avatar-circle';
       avc.textContent = item ? (item.avatar || '😀') : '';
+      if (item && item.color) avc.style.backgroundColor = item.color;
       const nm = document.createElement('span');
       nm.textContent = item ? ((idx === 0 ? '1º ' : idx === 1 ? '2º ' : '3º ') + item.name) : (idx === 0 ? '1º' : idx === 1 ? '2º' : '3º');
       label.appendChild(avc);
@@ -172,4 +192,20 @@ socket.on('room:bg_update', ({ url }) => {
 function showError(msg) {
   errorDiv.textContent = msg;
   errorDiv.classList.remove('hidden');
+}
+
+function startTimer(endAt) {
+  stopTimer();
+  if (!timerDiv) return;
+  countdownInterval = setInterval(() => {
+    const left = Math.max(0, (endAt || 0) - Date.now());
+    const s = Math.ceil(left / 1000);
+    timerDiv.textContent = `${s}s`;
+    if (left <= 0) stopTimer();
+  }, 200);
+}
+
+function stopTimer() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = null;
 }
